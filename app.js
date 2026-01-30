@@ -1,63 +1,78 @@
-const API_BASE = "https://crt-outlook-api.gregorjanezic.workers.dev";
+// assets/app.js
+(() => {
+  const API_URL = "https://crt-outlook-api.gregorjanezic.workers.dev/api/status";
 
-const grid = document.getElementById("grid");
-const statusEl = document.getElementById("status");
-const btn = document.getElementById("refreshBtn");
+  const statusEl = document.getElementById("status");
+  const gridEl = document.getElementById("grid");
+  const refreshBtn = document.getElementById("refreshBtn");
 
-function fmtDirection(d) {
-  return d === "bull" ? "Bullish" : "Bearish";
-}
-
-function timeAgo(iso) {
-  const t = Date.parse(iso);
-  if (!Number.isFinite(t)) return "";
-  const diff = Math.max(0, Date.now() - t);
-  const m = Math.floor(diff / 60000);
-  if (m < 60) return `${m}m ago`;
-  const h = Math.floor(m / 60);
-  if (h < 48) return `${h}h ago`;
-  const d = Math.floor(h / 24);
-  return `${d}d ago`;
-}
-
-async function load() {
-  statusEl.textContent = "Loading…";
-  grid.innerHTML = "";
-
-  const res = await fetch(`${API_BASE}/api/status`);
-  if (!res.ok) {
-    statusEl.textContent = `API error: ${res.status}`;
-    return;
+  function esc(s) {
+    return String(s ?? "").replace(/[&<>"']/g, (c) => ({
+      "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+    }[c]));
   }
 
-  const data = await res.json();
-  const items = data.items || [];
-
-  statusEl.textContent = `Updated: ${new Date(data.updatedAt).toLocaleString()} • Active signals: ${items.length}`;
-
-  if (items.length === 0) {
-    grid.innerHTML = `<div class="card">No active D1/W1 CRT signals right now.</div>`;
-    return;
+  function setStatus(text) {
+    if (statusEl) statusEl.textContent = text;
   }
 
-  for (const it of items) {
-    const card = document.createElement("div");
-    card.className = "card";
+  function render(data) {
+    const items = Array.isArray(data?.items) ? data.items : [];
 
-    card.innerHTML = `
-      <div class="row">
-        <div style="font-size:18px;font-weight:900">${it.symbol}</div>
-        <div class="badge">${it.tf}</div>
-      </div>
-      <div class="row">
-        <div class="${it.direction}">${fmtDirection(it.direction)}</div>
-        <div class="meta">${timeAgo(it.timestamp)}</div>
-      </div>
-      <div class="meta">TTL: ${Math.round((it.ttlSeconds || 0)/3600)}h</div>
-    `;
-    grid.appendChild(card);
+    if (!gridEl) return;
+
+    if (items.length === 0) {
+      gridEl.innerHTML = `<div class="card"><div class="row"><b>No active signals</b></div>
+        <div class="meta">Nothing in the list right now.</div></div>`;
+      return;
+    }
+
+    gridEl.innerHTML = items.map((it) => {
+      const dir = (it.direction || "").toLowerCase();
+      const cls = dir === "bull" ? "bull" : (dir === "bear" ? "bear" : "");
+      const badge = `<span class="badge ${cls}">${esc(dir || "n/a")}</span>`;
+      return `
+        <div class="card">
+          <div class="row">
+            <b>${esc(it.symbol)}</b>
+            ${badge}
+          </div>
+          <div class="meta">
+            TF: <b>${esc(it.tf)}</b><br/>
+            Updated: ${esc(data.updatedAt || it.timestamp || "")}
+          </div>
+        </div>
+      `;
+    }).join("");
   }
-}
 
-btn.addEventListener("click", load);
-load();
+  async function load() {
+    try {
+      setStatus("Loading…");
+      if (gridEl) gridEl.innerHTML = "";
+
+      const res = await fetch(API_URL, { cache: "no-store" });
+      if (!res.ok) throw new Error(`API error: ${res.status} ${res.statusText}`);
+
+      const data = await res.json();
+      render(data);
+
+      const when = data?.updatedAt ? `Last update: ${data.updatedAt}` : "Loaded";
+      setStatus(when);
+    } catch (err) {
+      console.error(err);
+      setStatus("Error (open console)");
+      if (gridEl) {
+        gridEl.innerHTML = `
+          <div class="card">
+            <div class="row"><b>Could not load data</b></div>
+            <div class="meta">${esc(err?.message || err)}</div>
+          </div>`;
+      }
+    }
+  }
+
+  if (refreshBtn) refreshBtn.addEventListener("click", load);
+  load();
+})();
+
