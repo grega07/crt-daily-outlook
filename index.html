@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>CRT Daily Outlook</title>
+  <style>
+    body{font-family:system-ui,Segoe UI,Arial,sans-serif;margin:24px;max-width:980px}
+    h1{margin:0 0 6px}
+    .sub{color:#555;margin:0 0 18px}
+    .top{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;gap:12px;flex-wrap:wrap}
+    .meta{color:#666;font-size:12px}
+    .btn{cursor:pointer;border:1px solid #ddd;background:#fff;border-radius:10px;padding:8px 10px}
+    .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px}
+    .card{border:1px solid #e5e5e5;border-radius:12px;padding:12px}
+    .row{display:flex;justify-content:space-between;align-items:center;margin-top:6px}
+    .badge{font-size:12px;border:1px solid #ddd;border-radius:999px;padding:2px 8px}
+    .bull{font-weight:800}
+    .bear{font-weight:800}
+    .footer{margin-top:24px;color:#777;font-size:12px}
+  </style>
+</head>
+<body>
+  <h1>CRT Daily Outlook</h1>
+  <p class="sub">Pairs that currently meet <b>D1</b> or <b>W1</b> CRT conditions (auto-updated from TradingView alerts).</p>
+
+  <div class="top">
+    <div id="status" class="meta">Loading…</div>
+    <button class="btn" id="refreshBtn">Refresh</button>
+  </div>
+
+  <div id="grid" class="grid"></div>
+
+  <div class="footer">
+    Educational / informational only — not financial advice.
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
